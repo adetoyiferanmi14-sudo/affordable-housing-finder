@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block nav_properties %}active{% endblock %}
+{% block title %}Find Properties - {{ SITE_BRAND }}{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+  <div class="page-hero-inner">
+    <div class="eyebrow">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M21 21L16.65 16.65" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      HOUSING FINDER
+    </div>
+    <h1>Properties you qualify for</h1>
+    {% if no_session %}
+    <p>Fill in your details on the Eligibility Checker to see properties matched to you.</p>
+    {% else %}
+    <p>Showing only properties that match your eligibility. Use the filters below to narrow the list further.</p>
+    {% endif %}
+  </div>
+</section>
+
+<section class="section">
+  {% if no_session %}
+  <div class="empty-state">
+    <p>Please fill in your details on the Eligibility Checker page first.</p>
+    <a href="{% url 'eligibility_check' %}" class="btn btn-primary">Go to Eligibility Checker</a>
+  </div>
+  {% else %}
+
+  <form method="get" action="{% url 'property_search' %}" class="filter-bar">
+    <div class="field">
+      <label for="keyword">Keyword</label>
+      <input type="text" id="keyword" name="keyword" placeholder="e.g. duplex, Lekki" value="{{ keyword }}">
+    </div>
+    <div class="field">
+      <label for="location">Location</label>
+      <input type="text" id="location" name="location" placeholder="e.g. Ikeja" value="{{ location }}">
+    </div>
+    <div class="field">
+      <label for="max_price">Max Price</label>
+      <input type="number" id="max_price" name="max_price" placeholder="e.g. 50000000" value="{{ max_price }}">
+    </div>
+    <div class="field">
+      <label for="bedrooms">Bedrooms</label>
+      <select id="bedrooms" name="bedrooms">
+        <option value="" {% if not bedrooms %}selected{% endif %}>Any</option>
+        <option value="1" {% if bedrooms == '1' %}selected{% endif %}>1+</option>
+        <option value="2" {% if bedrooms == '2' %}selected{% endif %}>2+</option>
+        <option value="3" {% if bedrooms == '3' %}selected{% endif %}>3+</option>
+        <option value="4" {% if bedrooms == '4' %}selected{% endif %}>4+</option>
+        <option value="5" {% if bedrooms == '5' %}selected{% endif %}>5+</option>
+      </select>
+    </div>
+    <button type="submit" class="btn btn-primary">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M21 21L16.65 16.65" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      Search
+    </button>
+  </form>
+
+  <p class="result-count">Showing {{ shown_count }} of {{ total_qualifying }} properties you qualify for.</p>
+  <p class="session-note">All properties shown are demonstration data for this project. They are not real listings.</p>
+
+  {% if properties %}
+  <div class="property-grid">
+    {% for property in properties %}
+    <a href="{% url 'property_detail' property.property_id %}" class="property-card">
+      <div class="property-image" style="background-image: url('{{ property.image_url }}');">
+        <span class="scheme-badge badge-{{ property.scheme.scheme_name|lower }}">{{ property.scheme.get_scheme_name_display }}</span>
+      </div>
+      <div class="property-body">
+        <h3>{{ property.bedrooms }} Bedroom Home, {{ property.address }}</h3>
+        {% if property.area %}<div class="property-area">{{ property.area }}</div>{% endif %}
+        <div class="property-price">&#8358;{{ property.price|floatformat:0|intcomma }}</div>
+        <div class="property-meta">{{ property.bedrooms }} bed &middot; {{ property.bathrooms }} bath</div>
+        <span class="btn btn-primary btn-full btn-small">View Details</span>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <p>No properties match your search and eligibility. Try adjusting the filters or updating your details on the Eligibility Checker page.</p>
+    <a href="{% url 'eligibility_check' %}" class="btn btn-outline">Update your details</a>
+  </div>
+  {% endif %}
+
+  {% endif %}
+</section>
+{% endblock %}

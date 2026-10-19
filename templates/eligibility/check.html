@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block nav_eligibility %}active{% endblock %}
+{% block title %}Check Eligibility - {{ SITE_BRAND }}{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+  <div class="page-hero-inner">
+    <div class="eyebrow">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      ELIGIBILITY CHECKER
+    </div>
+    <h1>Check which schemes <span class="accent">you qualify for</span></h1>
+    <p>Fill in the details below. The system will check your eligibility for NHF, LagosHOMS, and Rent-to-Own instantly. No account needed. Your details are not stored.</p>
+  </div>
+</section>
+
+<section class="section narrow">
+  <div class="card form-card">
+    <form method="post" action="{% url 'eligibility_check' %}">
+      {% csrf_token %}
+      <div class="form-grid">
+        <div class="field">
+          <label for="id_age">Age</label>
+          <input type="number" id="id_age" name="age" placeholder="e.g. 30" value="{{ form.age.value|default:'' }}" required>
+          {% if form.age.errors %}<div style="color:var(--red);font-size:12px;">{{ form.age.errors.0 }}</div>{% endif %}
+        </div>
+        <div class="field">
+          <label for="id_location">Location</label>
+          <input type="text" id="id_location" name="location" placeholder="e.g. Yaba, Ikeja, Surulere" value="{{ form.location.value|default:'' }}" required>
+          {% if form.location.errors %}<div style="color:var(--red);font-size:12px;">{{ form.location.errors.0 }}</div>{% endif %}
+        </div>
+        <div class="field">
+          <label for="id_income">Monthly Income in Naira</label>
+          <input type="number" id="id_income" name="income" placeholder="e.g. 150,000" value="{{ form.income.value|default:'' }}" required>
+          {% if form.income.errors %}<div style="color:var(--red);font-size:12px;">{{ form.income.errors.0 }}</div>{% endif %}
+        </div>
+        <div class="field">
+          <label for="id_nhf_months">NHF Contributions in months</label>
+          <input type="number" id="id_nhf_months" name="nhf_months" placeholder="e.g. 12" value="{{ form.nhf_months.value|default:'' }}" required>
+          {% if form.nhf_months.errors %}<div style="color:var(--red);font-size:12px;">{{ form.nhf_months.errors.0 }}</div>{% endif %}
+        </div>
+        <div class="field">
+          <label for="id_residency_yrs">Lagos Residency in years</label>
+          <input type="number" id="id_residency_yrs" name="residency_yrs" placeholder="e.g. 5" value="{{ form.residency_yrs.value|default:'' }}" required>
+          {% if form.residency_yrs.errors %}<div style="color:var(--red);font-size:12px;">{{ form.residency_yrs.errors.0 }}</div>{% endif %}
+        </div>
+        <div class="field">
+          <label for="id_monthly_repayments">Monthly Loan Repayments (N)</label>
+          <input type="number" step="0.01" id="id_monthly_repayments" name="monthly_repayments" placeholder="e.g. 45,000" value="{{ form.monthly_repayments.value|default:'' }}" required>
+          {% if form.monthly_repayments.errors %}<div style="color:var(--red);font-size:12px;">{{ form.monthly_repayments.errors.0 }}</div>{% endif %}
+        </div>
+        <div class="field">
+          <label>Prior Homeownership</label>
+          <div class="radio-row">
+            <label class="radio-option"><input type="radio" name="prior_owner" value="yes" {% if form.prior_owner.value == 'yes' %}checked{% endif %} required> Yes</label>
+            <label class="radio-option"><input type="radio" name="prior_owner" value="no" {% if form.prior_owner.value == 'no' or not form.prior_owner.value %}checked{% endif %}> No</label>
+          </div>
+          {% if form.prior_owner.errors %}<div style="color:var(--red);font-size:12px;">{{ form.prior_owner.errors.0 }}</div>{% endif %}
+        </div>
+        <div class="field">
+          <label for="id_equity">Equity Available in Naira</label>
+          <input type="number" id="id_equity" name="equity" placeholder="e.g. 500,000" value="{{ form.equity.value|default:'' }}" required>
+          {% if form.equity.errors %}<div style="color:var(--red);font-size:12px;">{{ form.equity.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary btn-full">Check Eligibility</button>
+    </form>
+  </div>
+
+  {% if results %}
+  <div class="results-block">
+    <h2 class="results-title">Eligibility Results</h2>
+    <div class="results-grid">
+
+      <div class="result-card {% if results.NHF.eligible %}eligible{% else %}not-eligible{% endif %}">
+        <div class="result-head">
+          <span class="result-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3 21H21M4 21V8L12 3L20 8V21M9 21V13H15V21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+          <span class="result-name">National Housing Fund (NHF)</span>
+        </div>
+        <span class="badge {% if results.NHF.eligible %}badge-eligible{% else %}badge-not-eligible{% endif %}">
+          {% if results.NHF.eligible %}Eligible{% else %}Not Eligible{% endif %}
+        </span>
+        <p class="result-reason">{{ results.NHF.reason }}</p>
+        <ul class="criteria-list">
+          <li class="{% if results.NHF.checks.income_in_range %}pass{% else %}fail{% endif %}">Income in range (N100,000 &ndash; N300,000)</li>
+          <li class="{% if results.NHF.checks.nhf_months_sufficient %}pass{% else %}fail{% endif %}">NHF contributions sufficient (&ge; 6 months)</li>
+          <li class="{% if results.NHF.checks.age_within_limit %}pass{% else %}fail{% endif %}">Age within limit (&le; 60)</li>
+        </ul>
+      </div>
+
+      <div class="result-card {% if results.LAGOSHOMS.eligible %}eligible{% else %}not-eligible{% endif %}">
+        <div class="result-head">
+          <span class="result-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 21V7L12 3L20 7V21M9 21V15H15V21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+          <span class="result-name">LagosHOMS</span>
+        </div>
+        <span class="badge {% if results.LAGOSHOMS.eligible %}badge-eligible{% else %}badge-not-eligible{% endif %}">
+          {% if results.LAGOSHOMS.eligible %}Eligible in Principle{% else %}Not Eligible{% endif %}
+        </span>
+        <p class="result-reason">You {% if not results.LAGOSHOMS.eligible %}do not {% endif %}meet the LagosHOMS requirements {% if not results.LAGOSHOMS.eligible %}for this session{% else %}based on the information you provided{% endif %}.</p>
+        <ul class="criteria-list">
+          <li class="{% if results.LAGOSHOMS.checks.income_in_range %}pass{% else %}fail{% endif %}">Income &ge; N343,000</li>
+          <li class="{% if results.LAGOSHOMS.checks.equity_sufficient %}pass{% else %}fail{% endif %}">Equity sufficient (&ge; 30% of property price)</li>
+          <li class="{% if results.LAGOSHOMS.checks.dti_acceptable %}pass{% else %}fail{% endif %}">DTI acceptable (&le; 40%){% if dti_percent %} &mdash; yours: {{ dti_percent }}%{% endif %}</li>
+        </ul>
+      </div>
+
+      <div class="result-card {% if results.RENT_TO_OWN.eligible %}eligible{% else %}not-eligible{% endif %}">
+        <div class="result-head">
+          <span class="result-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3 11.5L12 4L21 11.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 10V20H19V10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+          <span class="result-name">Rent-to-Own</span>
+        </div>
+        <span class="badge {% if results.RENT_TO_OWN.eligible %}badge-eligible{% else %}badge-not-eligible{% endif %}">
+          {% if results.RENT_TO_OWN.eligible %}Eligible{% else %}Not Eligible{% endif %}
+        </span>
+        <p class="result-reason">{{ results.RENT_TO_OWN.reason }}</p>
+        <ul class="criteria-list">
+          <li class="{% if results.RENT_TO_OWN.checks.income_in_range %}pass{% else %}fail{% endif %}">Income in range (N100,000 &ndash; N300,000)</li>
+          <li class="{% if results.RENT_TO_OWN.checks.residency_sufficient %}pass{% else %}fail{% endif %}">Residency sufficient (&ge; 2 years)</li>
+          <li class="{% if results.RENT_TO_OWN.checks.no_prior_ownership %}pass{% else %}fail{% endif %}">No prior ownership</li>
+        </ul>
+      </div>
+
+    </div>
+
+    <p class="session-note">This result is for information only. It is not an official decision by FMBN, LagosHOMS, or any government agency. For official applications, contact the relevant agency directly: <a href="https://www.fmbn.gov.ng" target="_blank" rel="noopener">FMBN</a> &middot; <a href="https://lagoshoms.gov.ng" target="_blank" rel="noopener">LagosHOMS</a>.</p>
+
+    <a href="{% url 'property_search' %}" class="btn btn-primary btn-full">Check Properties</a>
+    <p class="session-note">Your details are saved for this visit so you can view matching properties without re-entering them.</p>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

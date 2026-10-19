@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% block nav_home %}active{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <div class="hero-inner">
+    <div class="eyebrow">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 20V10L9 6L14 10V20M14 20V13L19 9V20M4 20H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Nigeria &middot; Housing Deficit: 17,000,000+ units
+    </div>
+    <h1>Find a home you can <span class="accent">actually afford.</span> Know your eligibility before you apply.</h1>
+    <p class="hero-copy">Lagos renters spend up to 70% of income on rent &mdash; more than double the UN's 30% affordability benchmark. {{ SITE_BRAND }} checks your eligibility for NHF, LagosHOMS, and Rent-to-Own in seconds, then shows you the properties you qualify for.</p>
+    <div class="hero-actions">
+      <a href="{% url 'eligibility_check' %}" class="btn btn-primary">Check Eligibility &rarr;</a>
+      <a href="{% url 'property_search' %}" class="btn btn-outline">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M3 11.5L12 4L21 11.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 10V20H19V10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Browse Properties
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-heading">
+    <div class="eyebrow eyebrow-line">Explore Housing Schemes</div>
+    <h2>Three pathways. A brighter tomorrow.</h2>
+  </div>
+
+  <div class="scheme-grid">
+    {% for scheme in schemes %}
+    <div class="scheme-card">
+      <div class="scheme-icon">
+        {% if scheme.scheme_name == 'NHF' %}
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 21H21M4 21V8L12 3L20 8V21M9 21V13H15V21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        {% elif scheme.scheme_name == 'LAGOSHOMS' %}
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 21V7L12 3L20 7V21M9 21V15H15V21M9 9H9.01M15 9H15.01M9 12H9.01M15 12H15.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        {% else %}
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 11.5L12 4L21 11.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 10V20H19V10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        {% endif %}
+      </div>
+      <h3>{{ scheme.get_scheme_name_display }}</h3>
+      <p>{{ scheme.description }}</p>
+      <ul class="check-list">
+        {% if scheme.scheme_name == 'NHF' %}
+        <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>For active NHF contributors</li>
+        <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Low-interest mortgages</li>
+        <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Long-term home ownership</li>
+        {% elif scheme.scheme_name == 'LAGOSHOMS' %}
+        <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>For Lagos residents with equity</li>
+        <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Various housing units</li>
+        <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Flexible payment plans</li>
+        {% else %}
+        <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>For Lagos residents without prior homeownership</li>
+        <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Lower initial payments</li>
+        <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Gradual ownership</li>
+        {% endif %}
+      </ul>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-heading">
+    <div class="eyebrow eyebrow-line">How it works</div>
+    <h2>Get to your new home in 3 simple steps.</h2>
+  </div>
+
+  <div class="steps-row">
+    <div class="step">
+      <div class="step-num">1</div>
+      <h4>Fill in your details</h4>
+      <p>Provide some basic information about yourself, including age, location, income, NHF months, residency, DTI ratio, prior ownership, and equity.</p>
+    </div>
+    <div class="step-arrow">&rarr;</div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <h4>See your eligibility instantly</h4>
+      <p>We check your eligibility for NHF, LagosHOMS, and Rent-to-Own in seconds.</p>
+    </div>
+    <div class="step-arrow">&rarr;</div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <h4>Browse properties you qualify for</h4>
+      <p>View a curated list of properties that match your eligibility and budget.</p>
+    </div>
+  </div>
+</section>
+{% endblock %}

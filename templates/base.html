@@ -1,0 +1,63 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}{{ SITE_BRAND }} - {{ SITE_SUBTITLE }}{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+
+<header class="navbar">
+  <div class="navbar-inner">
+    <a href="{% url 'home' %}" class="brand">
+      <span class="brand-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 11.5L12 4L21 11.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 10V20H19V10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <span class="brand-text">
+        <span class="brand-name">{{ SITE_BRAND }}</span>
+        <span class="brand-sub">{{ SITE_SUBTITLE }}</span>
+      </span>
+    </a>
+
+    <nav class="nav-links" id="navLinks">
+      <a href="{% url 'home' %}" class="{% block nav_home %}{% endblock %}">Home</a>
+      <a href="{% url 'eligibility_check' %}" class="{% block nav_eligibility %}{% endblock %}">Check Eligibility</a>
+      <a href="{% url 'property_search' %}" class="{% block nav_properties %}{% endblock %}">Find Properties</a>
+    </nav>
+
+    <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M3 6H21M3 12H21M3 18H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+</header>
+
+<main>
+{% block content %}{% endblock %}
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <span class="brand-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 11.5L12 4L21 11.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 10V20H19V10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <div>
+        <div class="brand-name">{{ SITE_BRAND }}</div>
+        <div class="brand-sub">{{ SITE_SUBTITLE }}</div>
+      </div>
+    </div>
+    <div class="footer-links">
+      <a href="{% url 'data_protection' %}">Data Protection</a>
+      <span class="footer-divider"></span>
+      <span class="footer-note">N.D Project, Lagos State University, Ojo</span>
+    </div>
+    <div class="footer-tagline">{{ SITE_TAGLINE }}</div>
+  </div>
+</footer>
+
+<script src="{% static 'js/main.js' %}"></script>
+</body>
+</html>

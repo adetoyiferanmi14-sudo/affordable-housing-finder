@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Data Protection - {{ SITE_BRAND }}{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+  <div class="page-hero-inner">
+    <div class="eyebrow">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 2L4 6V11C4 16 7.5 20.5 12 22C16.5 20.5 20 16 20 11V6L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      DATA PROTECTION
+    </div>
+    <h1>How we handle your data</h1>
+    <p>Your privacy matters. Here's how we collect, use, and protect your information on this site.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="protection-grid">
+    <div class="card protection-card">
+      <div class="protection-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
+      <h4>No personal data stored</h4>
+      <p>This site does not collect or store any personal information. You do not need to create an account, enter your name, or provide an email address. The eligibility checker uses the details you enter during your visit, and those details are not saved anywhere after you close the page.</p>
+    </div>
+
+    <div class="card protection-card">
+      <div class="protection-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 8V12L15 15M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <h4>Session-only storage</h4>
+      <p>The details you enter on the Eligibility Checker page are stored temporarily in your browser session so you can view matching properties without re-entering them. This session ends when you close your browser. No database record is created.</p>
+    </div>
+
+    <div class="card protection-card">
+      <div class="protection-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
+      <h4>No third-party sharing</h4>
+      <p>No data is shared with any third party. No analytics trackers. No advertising cookies. No external services receive any information about you.</p>
+    </div>
+
+    <div class="card protection-card">
+      <div class="protection-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <h4>Your rights under the NDPA</h4>
+      <p>The Nigeria Data Protection Act grants you rights over your personal data. Because this system stores no personal data, there is nothing to access, correct, export, or erase. The system is designed to satisfy the NDPA by not collecting data in the first place.</p>
+    </div>
+  </div>
+</section>
+{% endblock %}

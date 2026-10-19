@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block nav_properties %}active{% endblock %}
+{% block title %}{{ property.address }} - {{ SITE_BRAND }}{% endblock %}
+
+{% block content %}
+<section class="section">
+  <a href="{% url 'property_search' %}" class="back-link">&larr; Back to Properties</a>
+
+  {% if no_session %}
+  <div class="empty-state">
+    <p>Please fill in your details on the Eligibility Checker page first.</p>
+    <a href="{% url 'eligibility_check' %}" class="btn btn-primary">Go to Eligibility Checker</a>
+  </div>
+
+  {% else %}
+
+  <div class="detail-grid">
+    <div class="detail-left">
+      <img src="{{ property.image_url }}" alt="{{ property.address }}" class="detail-image">
+      <span class="scheme-badge badge-{{ property.scheme.scheme_name|lower }}">{{ property.scheme.get_scheme_name_display }}</span>
+      <h1>{{ property.address }}</h1>
+      {% if property.area %}<div class="detail-area">{{ property.area }}</div>{% endif %}
+      <div class="detail-price">&#8358;{{ property.price|floatformat:0|intcomma }}</div>
+
+      <div class="detail-facts">
+        <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M3 21H21M4 21V8L12 3L20 8V21M9 21V13H15V21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> {{ property.bedrooms }} Bedrooms</span>
+        <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/></svg> {{ property.bathrooms }} Bathrooms</span>
+        <span class="{% if property.status == 'AVAILABLE' %}status-available{% endif %}">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          {{ property.get_status_display }}
+        </span>
+      </div>
+
+      <p class="detail-description">{{ property.description }}</p>
+      <p class="session-note">This listing is demonstration data, not a real offer.</p>
+
+      {% if property.scheme.scheme_name == 'LAGOSHOMS' %}
+      <div class="card equity-card">
+        <div class="equity-head">
+          <h4>LagosHOMS Equity Requirement</h4>
+          <span class="badge badge-neutral">LagosHOMS</span>
+        </div>
+        <div class="equity-row">
+          <span>Required equity (30% of price)</span>
+          <strong>&#8358;{{ required_equity|floatformat:0|intcomma }}</strong>
+        </div>
+        <div class="equity-row">
+          <span>Your equity from this session</span>
+          <strong>&#8358;{{ user_equity|default:'0'|floatformat:0|intcomma }}</strong>
+        </div>
+        <div class="{% if result.checks.equity_sufficient %}pass{% else %}fail{% endif %} equity-check">
+          {% if result.checks.equity_sufficient %}You meet the equity requirement{% else %}You do not meet the equity requirement{% endif %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="detail-right">
+      <div class="card eligibility-card">
+        <h4>Your Eligibility for This Property</h4>
+        <span class="badge {% if eligible %}badge-eligible{% else %}badge-not-eligible{% endif %}">
+          {% if eligible %}Eligible{% else %}Not Eligible{% endif %}
+        </span>
+        <p class="result-reason">{{ result.reason }}</p>
+        <ul class="criteria-list">
+          {% for key, passed in result.checks.items %}
+          <li class="{% if passed %}pass{% else %}fail{% endif %}">
+            {% if key == 'income_in_range' and property.scheme.scheme_name == 'LAGOSHOMS' %}Income &ge; N343,000
+            {% elif key == 'income_in_range' %}Income in range (N100,000 &ndash; N300,000)
+            {% elif key == 'nhf_months_sufficient' %}NHF contributions sufficient (&ge; 6 months)
+            {% elif key == 'age_within_limit' %}Age within limit (&le; 60)
+            {% elif key == 'equity_sufficient' %}Equity sufficient (&ge; 30% of property price)
+            {% elif key == 'dti_acceptable' %}DTI acceptable (&le; 40%)
+            {% elif key == 'residency_sufficient' %}Residency sufficient (&ge; 2 years)
+            {% elif key == 'no_prior_ownership' %}No prior ownership
+            {% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+        <a href="{% url 'eligibility_check' %}" class="btn btn-primary btn-full">See Full Eligibility</a>
+      </div>
+    </div>
+  </div>
+
+  {% endif %}
+</section>
+{% endblock %}
