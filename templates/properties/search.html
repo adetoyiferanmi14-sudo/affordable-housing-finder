@@ -58,13 +58,14 @@
   </form>
 
   <p class="result-count">Showing {{ shown_count }} of {{ total_qualifying }} properties you qualify for.</p>
+  {% include "_disclaimer.html" %}
   <p class="session-note">All properties shown are demonstration data for this project. They are not real listings.</p>
 
   {% if properties %}
   <div class="property-grid">
     {% for property in properties %}
     <a href="{% url 'property_detail' property.property_id %}" class="property-card">
-      <div class="property-image" style="background-image: url('{{ property.image_url }}');">
+      <div class="property-image" style="background-image: url('{{ property.image_src }}');">
         <span class="scheme-badge badge-{{ property.scheme.scheme_name|lower }}">{{ property.scheme.get_scheme_name_display }}</span>
       </div>
       <div class="property-body">

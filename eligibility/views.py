@@ -1,69 +1,80 @@
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 from django.shortcuts import render
 
+from . import rules
+from .engine import load_params, run_all_checks
 from .forms import EligibilityForm
-from .rules import run_all_checks
+
+CARD_ORDER = ['NHF', 'LAGOSHOMS', 'RENT_TO_OWN']
 
 
-def _dti_percent(dti_ratio_str):
-    """Converts a stored decimal-fraction DTI ratio (e.g. '0.3050') into a
-    display percentage string (e.g. '30.50'), or None if it can't be read."""
-    try:
-        return (Decimal(dti_ratio_str) * 100).quantize(Decimal('0.01'))
-    except Exception:
+def _initial_from_session(saved):
+    """Pre-fill the form from this visit's session. The repayments figure is
+    not kept, so it is reconstructed from the stored ratio and income."""
+    if not saved:
         return None
+    initial = {key: saved[key] for key in
+               ('age', 'income', 'nhf_months', 'residency_yrs', 'prior_owner', 'equity')
+               if saved.get(key) not in (None, '')}
+    try:
+        initial['monthly_repayments'] = (
+            Decimal(saved['dti_ratio']) * Decimal(saved['income'])).quantize(Decimal('0.01'))
+    except (InvalidOperation, KeyError, TypeError):
+        pass
+    return initial
+
+
+def _results_context(values):
+    params = load_params()
+    results = run_all_checks(values, params_by_scheme=params)
+    cards = [{'code': code, 'result': results[code]} for code in CARD_ORDER if code in results]
+
+    param_list = list(params.values())
+    income = rules.to_decimal(values.get('income'))
+    income_uncovered = not rules.covers_income(param_list, income)
+    gap = rules.gap_for_income(rules.uncovered_income_bands(param_list), income)
+    all_gaps = [rules.describe_band(low, high)
+                for low, high in rules.uncovered_income_bands(param_list)]
+
+    return {
+        'cards': cards,
+        'income_uncovered': income_uncovered,
+        'gap_text': rules.describe_band(*gap) if gap else '',
+        'all_gap_text': '; '.join(all_gaps),
+        'none_eligible': not any(r['eligible'] for r in results.values()),
+    }
 
 
 def check(request):
     """
-    GET: show the eligibility form, pre-filled from a previous session
-    visit if one exists.
-    POST: validate the eight fields with EligibilityForm, compute the
-    debt-to-income ratio from monthly loan repayments / income, store the
-    result in the session, run the three rules, and render the results
-    below the form. Invalid submissions re-render the form with field
-    errors and do not touch the session or run any rules.
+    GET: show the form, pre-filled from this visit's session if there is one.
+    POST: validate with EligibilityForm. Invalid input is rejected with field
+    errors: nothing is stored and no rule is run. Valid input is turned into a
+    debt-to-income ratio, kept in the session, and the stored rules are run.
     """
-    results = None
-    dti_percent = None
-
     saved = request.session.get('eligibility')
+    context = {'cards': None, 'income_uncovered': False, 'none_eligible': False}
 
     if request.method == 'POST':
         form = EligibilityForm(request.POST)
         if form.is_valid():
             data = form.cleaned_data
-            income = data['income']
-            monthly_repayments = data['monthly_repayments']
-            dti_ratio = (monthly_repayments / income) if income > 0 else Decimal('1')
-
+            dti_ratio = data['monthly_repayments'] / data['income']   # income >= 1
             values = {
                 'age': str(data['age']),
-                'location': data['location'],
-                'income': str(income),
+                'income': str(data['income']),
                 'nhf_months': str(data['nhf_months']),
                 'residency_yrs': str(data['residency_yrs']),
-                'monthly_repayments': str(monthly_repayments),
                 'dti_ratio': str(dti_ratio),
                 'prior_owner': data['prior_owner'],
                 'equity': str(data['equity']),
             }
             request.session['eligibility'] = values
             request.session.modified = True
-            results = run_all_checks(values)
-            dti_percent = _dti_percent(values['dti_ratio'])
-            saved = values
+            context.update(_results_context(values))
     else:
-        initial = saved if saved else None
-        form = EligibilityForm(initial=initial)
-        if saved:
-            dti_percent = _dti_percent(saved.get('dti_ratio'))
+        form = EligibilityForm(initial=_initial_from_session(saved))
 
-    context = {
-        'form': form,
-        'values': saved or {},
-        'results': results,
-        'dti_percent': dti_percent,
-    }
+    context['form'] = form
     return render(request, 'eligibility/check.html', context)

@@ -1,7 +1,7 @@
 # Affordable Housing Finder and Eligibility System
 
 National Diploma project - Lagos State University, Ojo.
-Django + SQLite. No accounts, no passwords, no admin panel. Five pages.
+Django + SQLite. Five public pages, no public accounts. Live at https://affordablehousing.pythonanywhere.com
 
 ## Local setup
 
@@ -10,126 +10,76 @@ python -m venv venv
 source venv/bin/activate        # venv\Scripts\activate on Windows
 pip install -r requirements.txt
 
-python manage.py makemigrations
 python manage.py migrate
 python manage.py seed_data
-# Affordable Housing Finder and Eligibility System
+python manage.py createsuperuser   # for /admin/ (rule management)
 
-National Diploma project - Lagos State University, Ojo.
-Django + SQLite. No accounts, no passwords, no admin panel. Five pages.
-Live at: https://affordablehousing.pythonanywhere.com
+DJANGO_DEBUG=1 python manage.py runserver     # Windows: set DJANGO_DEBUG=1
+```
 
-## Local setup
+DEBUG is OFF unless `DJANGO_DEBUG=1` is set, so production is safe by default.
 
-```bash
-python -m venv venv
-source venv/bin/activate        # venv\Scripts\activate on Windows
-pip install -r requirements.txt
-
-python manage.py makemigrations
-python manage.py migrate
-python manage.py seed_data
-
-
-
-## Run the eligibility rule tests (20 test cases)
+## Tests
 
 ```bash
 python manage.py test eligibility
 ```
 
-20 tests across 4 classes: NHF (4), LagosHOMS (5), Rent-to-Own (5), and
-boundary tests covering both sides of each income threshold (6).
+Covers every threshold on both sides (all comparisons are inclusive), invalid
+input, database-loaded rules (versions, effective dates, inactive rules),
+the income-gap message, and the main views.
 
-## Deploy on PythonAnywhere
+## How eligibility works
 
-1. Push this project to GitHub (or upload a zip directly).
-2. Open a Bash console on PythonAnywhere and clone the repo (or unzip the upload).
-3. Create a virtualenv and `pip install -r requirements.txt`.
-4. Run `python manage.py makemigrations`, `migrate`, then `python manage.py seed_data`.
-5. Create a new Web App (manual configuration, matching your Python version).
-6. Point the WSGI file at `affordable_housing.wsgi.application` (edit the
-   PythonAnywhere-generated `wsgi.py` to import from this project, or set
-   the working directory so `affordable_housing/wsgi.py` is used directly).
-7. In the Web tab, add a static files mapping: URL `/static/` -> directory
-   `.../affordable_housing/staticfiles`, and run `python manage.py collectstatic`.
-8. Update `ALLOWED_HOSTS` and `CSRF_TRUSTED_ORIGINS` in `settings.py` with your
-   actual PythonAnywhere subdomain if it isn't `affordablehousing.pythonanywhere.com`.
-9. Set `DEBUG = False` in `settings.py` before final deployment.
-10. Reload the web app and test the live URL.
+Eligibility thresholds are stored in the database (`EligibilityRule`) and
+executed by the engine - there is no second, hard-coded copy. Edit them in
+Django Admin at `/admin/`:
 
-## Structure
+- To change a threshold, ADD a new rule for the scheme with a later
+  *effective from* date. The latest active rule that is not in the future is
+  used; older versions stay as history.
+- A blank parameter means that criterion is not applied.
+- All comparisons are inclusive: a value exactly equal to a minimum or
+  maximum qualifies.
+- The criteria text shown to users is generated from the stored values, so
+  the documentation always matches what is executed.
 
-- `properties/` - Scheme + Property models (Property includes an `area` field), home/search/detail/data-protection views
-- `eligibility/` - EligibilityRule model (docs only), `rules.py` (the real logic), `forms.py` (server-side validation), check view, 20 tests
-- `templates/` - the five pages, all extending `base.html`
-- `static/css/style.css` - dark theme, emerald accents, mobile breakpoints at 720px/400px
+Initial (version 1) rules, all **project-defined assumptions** unless stated
+in the rule's source note:
 
-## The three rules (eligibility/rules.py)
+| Scheme | Rule |
+|---|---|
+| NHF | income 100,000 to 300,000, at least 6 months of NHF contributions (this one follows FMBN's published loan conditions), age 60 or under |
+| LagosHOMS | income 343,000 or more, equity of at least 30% of **that property's** price (checked per property), debt-to-income ratio 0.40 or less |
+| Rent-to-Own | income 100,000 to 300,000, at least 2 years of Lagos residency, no prior homeownership |
 
-- **NHF**: income 100,000-300,000, NHF contributions >= 6 months, age <= 60
-- **LagosHOMS**: income >= 343,000 (no upper limit), equity >= 30% of the specific property's price, DTI <= 0.40
-- **Rent-to-Own**: income 100,000-300,000, Lagos residency >= 2 years, no prior homeownership
+No scheme covers monthly income below 100,000 or from 300,001 to 342,999. The
+results page says so ("No scheme currently covers this income band"); the
+bands are computed from the stored rules.
 
-All thresholds were developed for this project - they are not official
-FMBN, LagosHOMS, or government criteria. No `eval()`, no dynamic parsing -
-plain Python conditionals in pure functions.
+## Data handling
 
-Note: because the NHF/Rent-to-Own band (100,000-300,000) and the LagosHOMS
-floor (343,000+) do not overlap, a user earning between 300,001 and 342,999
-will not qualify for any of the three schemes. This is expected behaviour
-given how the thresholds are defined, not a bug.
+The system minimises data, stores no identifiers, and processes inputs
+transiently. Age, income and the other answers are personal information and
+are processed; they are held in a server-side session record (database) keyed
+by a random id in a secure, HttpOnly cookie, for up to one hour. No name,
+email, phone number or location is collected. Run
+`python manage.py clearsessions` daily to delete expired records. Hosting logs
+may record IP addresses, and fonts/some images load from Google Fonts and
+Unsplash.
 
-LagosHOMS's equity check is evaluated per property (30% of that specific
-property's price), not as a single global check - see `_qualifies()` in
-`properties/views.py`.
+## Deploy on PythonAnywhere (update steps)
 
-## Debt-to-income ratio
-
-The form does not ask for a DTI ratio directly - it asks for "Monthly Loan
-Repayments," and the server computes `dti_ratio = monthly_repayments / income`
-before running the LagosHOMS rule.
-
-## Session and data handling
-
-No personal data is written to the database. The eight eligibility inputs
-live only in a signed (not encrypted) session cookie, expiring after 1 hour
-or on browser close. See the Data Protection page for the full explanation.
-
-
-## Run the eligibility rule tests (14 test cases)
-
-```bash
-python manage.py test eligibility
-```
-
-## Deploy on PythonAnywhere
-
-1. Push this project to GitHub.
-2. Open a Bash console on PythonAnywhere and clone the repo.
-3. Create a virtualenv and `pip install -r requirements.txt`.
-4. Run `python manage.py makemigrations`, `migrate`, then `python manage.py seed_data`.
-5. Create a new Web App (manual configuration, matching your Python version).
-6. Point the WSGI file at `affordable_housing.wsgi.application` (edit the
-   PythonAnywhere-generated `wsgi.py` to import from this project, or set
-   the working directory so `affordable_housing/wsgi.py` is used directly).
-7. In the Web tab, add a static files mapping: URL `/static/` -> directory
-   `.../affordable_housing/staticfiles`, and run `python manage.py collectstatic`.
-8. Update `ALLOWED_HOSTS` and `CSRF_TRUSTED_ORIGINS` in `settings.py` with your
-   actual PythonAnywhere subdomain if it isn't `bumble001.pythonanywhere.com`.
-9. Reload the web app and test the live URL.
+1. Upload/replace the changed files, then `pip install -r requirements.txt` (adds Pillow).
+2. `python manage.py makemigrations && python manage.py migrate && python manage.py seed_data`
+3. `python manage.py createsuperuser`, then `python manage.py collectstatic`
+4. Web tab, static files: add `/media/` -> `.../affordable_housing/media`
+5. Scheduled task (daily): `cd ~/affordable_housing && ~/.virtualenvs/ahes-venv/bin/python manage.py clearsessions`
+6. Reload the web app.
 
 ## Structure
 
-- `properties/` - Scheme + Property models, home/search/detail/data-protection views
-- `eligibility/` - EligibilityRule model (docs only), `rules.py` (the real logic), check view, 14 tests
-- `templates/` - the five pages, all extending `base.html`
-- `static/css/style.css` - dark theme, emerald accents, mobile breakpoints at 720px/400px
-
-## The three rules (eligibility/rules.py)
-
-- **NHF**: income 100,000-300,000, NHF contributions >= 6 months, age <= 60
-- **LagosHOMS**: income 100,000-300,000, equity >= 30% of the property's price, DTI <= 0.40
-- **Rent-to-Own**: income 100,000-300,000, Lagos residency >= 2 years, no prior homeownership
-
-No `eval()`, no dynamic parsing - plain Python conditionals in pure functions.
+- `properties/` - Scheme, Property (image upload, indexed area and price), views, admin
+- `eligibility/` - `rules.py` (pure logic), `engine.py` (loads rules from the database), `models.py` (EligibilityRule), `forms.py`, `views.py`, `admin.py`, `tests.py`
+- `templates/` - the five pages plus a shared disclaimer
+- `static/` - CSS and JS

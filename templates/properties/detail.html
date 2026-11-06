@@ -17,7 +17,7 @@
 
   <div class="detail-grid">
     <div class="detail-left">
-      <img src="{{ property.image_url }}" alt="{{ property.address }}" class="detail-image">
+      <img src="{{ property.image_src }}" alt="{{ property.address }}" class="detail-image">
       <span class="scheme-badge badge-{{ property.scheme.scheme_name|lower }}">{{ property.scheme.get_scheme_name_display }}</span>
       <h1>{{ property.address }}</h1>
       {% if property.area %}<div class="detail-area">{{ property.area }}</div>{% endif %}
@@ -35,23 +35,23 @@
       <p class="detail-description">{{ property.description }}</p>
       <p class="session-note">This listing is demonstration data, not a real offer.</p>
 
-      {% if property.scheme.scheme_name == 'LAGOSHOMS' %}
+      {% if show_equity_card %}
       <div class="card equity-card">
         <div class="equity-head">
-          <h4>LagosHOMS Equity Requirement</h4>
-          <span class="badge badge-neutral">LagosHOMS</span>
+          <h4>{{ property.scheme.get_scheme_name_display }} Equity Requirement</h4>
         </div>
         <div class="equity-row">
-          <span>Required equity (30% of price)</span>
+          <span>Required equity ({{ equity_pct }}% of price)</span>
           <strong>&#8358;{{ required_equity|floatformat:0|intcomma }}</strong>
         </div>
         <div class="equity-row">
           <span>Your equity from this session</span>
-          <strong>&#8358;{{ user_equity|default:'0'|floatformat:0|intcomma }}</strong>
+          <strong>&#8358;{{ user_equity|floatformat:0|intcomma }}</strong>
         </div>
         <div class="{% if result.checks.equity_sufficient %}pass{% else %}fail{% endif %} equity-check">
           {% if result.checks.equity_sufficient %}You meet the equity requirement{% else %}You do not meet the equity requirement{% endif %}
         </div>
+        {% if equity_covers_price %}<p class="session-note">Your equity is at least the full price of this property.</p>{% endif %}
       </div>
       {% endif %}
     </div>
@@ -64,20 +64,15 @@
         </span>
         <p class="result-reason">{{ result.reason }}</p>
         <ul class="criteria-list">
-          {% for key, passed in result.checks.items %}
-          <li class="{% if passed %}pass{% else %}fail{% endif %}">
-            {% if key == 'income_in_range' and property.scheme.scheme_name == 'LAGOSHOMS' %}Income &ge; N343,000
-            {% elif key == 'income_in_range' %}Income in range (N100,000 &ndash; N300,000)
-            {% elif key == 'nhf_months_sufficient' %}NHF contributions sufficient (&ge; 6 months)
-            {% elif key == 'age_within_limit' %}Age within limit (&le; 60)
-            {% elif key == 'equity_sufficient' %}Equity sufficient (&ge; 30% of property price)
-            {% elif key == 'dti_acceptable' %}DTI acceptable (&le; 40%)
-            {% elif key == 'residency_sufficient' %}Residency sufficient (&ge; 2 years)
-            {% elif key == 'no_prior_ownership' %}No prior ownership
-            {% endif %}
-          </li>
+          {% for row in result.rows %}
+          <li class="{{ row.status }}">{{ row.label }}</li>
           {% endfor %}
         </ul>
+        <p class="session-note rule-source">Rule version {{ result.version|default:"-" }}{% if result.effective_from %}, effective {{ result.effective_from|date:"j M Y" }}{% endif %}. {{ result.source_note }}</p>
+        {% if result.official_url %}
+        <a class="next-step" href="{{ result.official_url }}" target="_blank" rel="noopener">What to do next: official {{ result.scheme_label }} site &rarr;</a>
+        {% endif %}
+        {% include "_disclaimer.html" %}
         <a href="{% url 'eligibility_check' %}" class="btn btn-primary btn-full">See Full Eligibility</a>
       </div>
     </div>

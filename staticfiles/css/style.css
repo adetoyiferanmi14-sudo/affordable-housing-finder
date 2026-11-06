@@ -587,3 +587,32 @@ input:focus, select:focus {
   .section { padding: 40px 16px; }
   .card { padding: 18px; }
 }
+
+/* ---- Disclaimer, notices, rule source and next-step link ---- */
+.disclaimer {
+  border: 1px solid rgba(245, 158, 11, 0.55);
+  background: rgba(245, 158, 11, 0.09);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin: 0 0 20px 0;
+  font-size: 14px;
+  color: var(--text);
+}
+.disclaimer strong { color: #f59e0b; }
+
+.notice {
+  border: 1px solid rgba(16, 185, 129, 0.45);
+  background: rgba(16, 185, 129, 0.08);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin: 0 0 20px 0;
+  font-size: 14px;
+  color: var(--text);
+}
+.notice strong { display: block; color: var(--emerald); margin-bottom: 4px; }
+.notice .muted-line { display: block; margin-top: 6px; color: var(--muted); font-size: 13px; }
+
+.rule-source { text-align: left; margin-top: 12px; }
+.next-step { display: inline-block; margin: 10px 0 14px 0; font-size: 13px; font-weight: 600; color: var(--emerald); }
+.next-step:hover { text-decoration: underline; }
+.criteria-list li.pending::before { content: '\2022'; position: absolute; left: 0; color: var(--muted); font-weight: 700; }

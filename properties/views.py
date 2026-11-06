@@ -1,9 +1,11 @@
 from decimal import Decimal, InvalidOperation
 
-from django.shortcuts import render, get_object_or_404
+from django.db.models import Q
+from django.shortcuts import get_object_or_404, render
 
-from eligibility.rules import run_all_checks
-from .models import Scheme, Property
+from eligibility import rules
+from eligibility.engine import load_params
+from .models import Property, Scheme
 
 
 def home(request):
@@ -12,64 +14,55 @@ def home(request):
     return render(request, 'home.html', {'schemes': schemes})
 
 
-def _qualifies(prop, values):
-    """Runs the correct scheme rule for a single property and returns
-    (qualifies: bool, result: dict)."""
-    if prop.scheme.scheme_name == Scheme.LAGOSHOMS:
-        results = run_all_checks(values, property_price=prop.price)
-        result = results['LAGOSHOMS']
-    else:
-        results = run_all_checks(values)
-        result = results[prop.scheme.scheme_name]
-    return result['eligible'], result
+def _evaluate(prop, values, params):
+    """Run the stored rule for this property's scheme against the property's
+    own price (so equity is always checked per property)."""
+    rule = params.get(prop.scheme.scheme_name)
+    if rule is None:
+        rule = rules.RuleParams(scheme_code=prop.scheme.scheme_name)
+    return rules.evaluate(rule, values, prop.price)
 
 
 def search(request):
-    """Housing Finder page - shows only properties the session qualifies
-    for, further narrowed by the search filters."""
+    """Housing Finder: only properties the session qualifies for, narrowed by
+    the search filters. Price, bedrooms and text filters run in the database
+    (so the price/area indexes can be used); eligibility is checked per
+    property afterwards."""
     values = request.session.get('eligibility')
-
     if not values:
         return render(request, 'properties/search.html', {'no_session': True})
 
-    # All available properties the user qualifies for, before filters.
-    all_available = Property.objects.filter(status=Property.AVAILABLE).select_related('scheme')
-    qualifying = [p for p in all_available if _qualifies(p, values)[0]]
-    total_qualifying = len(qualifying)
+    params = load_params()
+    base = (Property.objects.filter(status=Property.AVAILABLE)
+            .select_related('scheme').order_by('property_id'))
 
-    # Apply search filters on top.
+    qualifying_ids = {p.pk for p in base if _evaluate(p, values, params)['eligible']}
+    total_qualifying = len(qualifying_ids)
+
     keyword = request.GET.get('keyword', '').strip()
     location = request.GET.get('location', '').strip()
     max_price = request.GET.get('max_price', '').strip()
     bedrooms = request.GET.get('bedrooms', '').strip()
 
-    filtered = qualifying
-
+    queryset = base.filter(pk__in=qualifying_ids)
     if keyword:
-        filtered = [p for p in filtered if keyword.lower() in p.address.lower()
-                    or keyword.lower() in p.description.lower()]
-
+        queryset = queryset.filter(
+            Q(address__icontains=keyword) | Q(description__icontains=keyword)
+            | Q(area__icontains=keyword))
     if location:
-        location_lower = location.lower()
-        filtered = [
-            p for p in filtered
-            if location_lower in p.address.lower() or location_lower in (p.area or '').lower()
-        ]
-
+        queryset = queryset.filter(Q(address__icontains=location) | Q(area__icontains=location))
     if max_price:
         try:
-            max_price_val = Decimal(max_price)
-            filtered = [p for p in filtered if p.price <= max_price_val]
+            queryset = queryset.filter(price__lte=Decimal(max_price))
         except (InvalidOperation, ValueError):
             pass
-
     if bedrooms:
         try:
-            bedrooms_val = int(bedrooms)
-            filtered = [p for p in filtered if p.bedrooms >= bedrooms_val]
+            queryset = queryset.filter(bedrooms__gte=int(bedrooms))
         except ValueError:
             pass
 
+    filtered = list(queryset)
     context = {
         'no_session': False,
         'properties': filtered,
@@ -84,27 +77,29 @@ def search(request):
 
 
 def detail(request, pk):
-    """Property Detail page - shows the property plus the session's
-    eligibility for this specific property."""
+    """Property Detail: the property plus this session's eligibility for it."""
     prop = get_object_or_404(Property.objects.select_related('scheme'), pk=pk)
     values = request.session.get('eligibility')
-
     if not values:
         return render(request, 'properties/detail.html', {'no_session': True, 'property': prop})
 
-    eligible, result = _qualifies(prop, values)
+    params = load_params()
+    result = _evaluate(prop, values, params)
 
-    required_equity = None
-    if prop.scheme.scheme_name == Scheme.LAGOSHOMS:
-        required_equity = prop.price * Decimal('0.30')
+    rule = params.get(prop.scheme.scheme_name)
+    required = result['required_equity']
+    user_equity = rules.to_decimal(values.get('equity'))
 
     context = {
         'no_session': False,
         'property': prop,
-        'eligible': eligible,
+        'eligible': result['eligible'],
         'result': result,
-        'required_equity': required_equity,
-        'user_equity': values.get('equity'),
+        'show_equity_card': required is not None,
+        'required_equity': required,
+        'equity_pct': rules._plain(rule.equity_percent) if rule and rule.equity_percent is not None else '',
+        'user_equity': user_equity,
+        'equity_covers_price': required is not None and user_equity >= prop.price,
     }
     return render(request, 'properties/detail.html', context)
 

@@ -1,1 +1,2 @@
 Django==5.0.9
+Pillow>=10.0
